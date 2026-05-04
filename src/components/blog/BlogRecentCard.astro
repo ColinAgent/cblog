@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content'
 import LeftSection from './blocks/LeftSection.astro'
 import RightSection from './blocks/RightSection.astro'
+import { getPostUrl } from '../../utils/getPostUrl'
 
 const { blogs } = Astro.props
 
@@ -20,7 +21,7 @@ const posts = blogs.slice(0, 5)
                 subTitle={b.data.description}
                 btnExists={true}
                 btnTitle="Read More"
-                btnURL={`/posts/${b.data.uid || b.slug}`}
+                btnURL={getPostUrl(b)}
                 img={b.data.cardImage}
                 imgAlt={b.data.title}
             />
@@ -31,7 +32,7 @@ const posts = blogs.slice(0, 5)
                 subTitle={b.data.description}
                 btnExists={true}
                 btnTitle="Read More"
-                btnURL={`/posts/${b.data.uid || b.slug}`}
+                btnURL={getPostUrl(b)}
                 single={!b.data.cardImage2}
                 imgOne={b.data.cardImage}
                 imgOneAlt={b.data.title}

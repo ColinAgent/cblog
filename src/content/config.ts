@@ -5,7 +5,6 @@ import { defineCollection, z } from 'astro:content'
 
 const posts = defineCollection({
     schema: ({ image }) => z.object({
-        uid: z.string().optional(),
         title: z.string(),
         description: z.string(),
         cardImage: image().optional().refine((img) => {

@@ -1,5 +1,5 @@
-import type { CollectionEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content'
 
 export function getPostUrl(post: CollectionEntry<'posts'>): string {
-  return post.data.uid ? `/posts/${post.data.uid}` : `/posts/${post.slug}`;
-} 
+  return `/posts/${post.slug}`
+}

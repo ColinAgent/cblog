@@ -10,9 +10,8 @@ import { getCategories, getPosts } from '../../support/content'
 export async function getStaticPaths() {
     const posts = await getPosts()
     return posts
-        .filter(post => post.data.uid) // Ensure each post has a uid
         .map(post => ({
-            params: { uid: post.data.uid },
+            params: { slug: post.slug },
             props: post,
         }))
 }

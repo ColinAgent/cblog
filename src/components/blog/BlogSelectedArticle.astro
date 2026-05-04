@@ -25,7 +25,7 @@ interface Props {
         {posts.map(post => {
             const postUrl = getPostUrl(post)
             return (
-                <a href={`/posts/${post.data.uid}`} class="group">
+                <a href={postUrl} class="group">
                     <BlogCard blog={post} />
                 </a>
             );
