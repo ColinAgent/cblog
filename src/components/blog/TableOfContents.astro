@@ -1,0 +1,313 @@
+---
+// src/components/blog/TableOfContents.astro
+export interface Props {
+  headings: {
+    depth: number;
+    slug: string;
+    text: string;
+  }[];
+  title?: string; // Optional post title
+}
+
+const { headings, title = "Article" } = Astro.props;
+
+// Ensure there is an H1 heading
+const hasH1 = headings.some(h => h.depth === 1);
+const processedHeadings = hasH1 
+  ? headings 
+  : [
+      {
+        depth: 1,
+        slug: "article-title",
+        text: title
+      },
+      ...headings
+    ];
+---
+
+{processedHeadings.length > 0 && (
+  <div class="toc-container bg-neutral-100 dark:bg-neutral-800/30 p-5 rounded-r-lg shadow-md ml-6 overflow-y-auto">
+    <div class="text-lg font-bold text-neutral-800 dark:text-neutral-300 mb-4 border-b border-neutral-200 dark:border-neutral-700 pb-2">Contents</div>
+    <nav aria-label="Article table of contents" class="toc-nav">
+      <ol class="space-y-1 text-sm">
+        {processedHeadings.map((heading) => (
+          <li class="toc-item">
+            <a 
+              href={`#${heading.slug}`}
+              data-heading-slug={heading.slug}
+              data-heading-depth={heading.depth}
+              class={`toc-link block py-1 transition-all
+                     ${heading.depth === 1 ? 'ml-0' : 
+                       heading.depth === 2 ? 'ml-4' : 
+                       heading.depth === 3 ? 'ml-8' : 'ml-12'} 
+                     text-neutral-600 dark:text-neutral-400 hover:text-orange-400`}
+            >
+              <span class="block truncate">
+                {heading.text}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </div>
+)}
+
+<script>
+  // Use an IIFE to isolate scope and avoid global variable pollution
+  (function() {
+    let isObserving = false;
+    let observer: IntersectionObserver | null = null;
+    
+    // Use explicit event types to improve type safety
+    type WheelEventHandler = (event: WheelEvent) => void;
+    
+    // Hoist handleTocWheel to the main scope
+    let handleTocWheel: WheelEventHandler;
+    
+    function setupHeadingObserver(): void {
+      if (isObserving) return;
+      
+      // Get all heading elements with IDs
+      const headingElements = Array.from(document.querySelectorAll<HTMLHeadingElement>('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'));
+      const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
+      const tocContainer = document.querySelector<HTMLDivElement>('.toc-container');
+      
+      if (!headingElements.length || !tocLinks.length || !tocContainer) return;
+      
+      // Use more explicit type definitions
+      interface HeadingMapItem {
+        element: HTMLHeadingElement;
+        link: HTMLAnchorElement | null;
+      }
+      
+      // Create mappings with explicit types
+      const headingMap = new Map<string, HeadingMapItem>();
+      headingElements.forEach(heading => {
+        headingMap.set(heading.id, {
+          element: heading,
+          link: document.querySelector<HTMLAnchorElement>(`.toc-link[data-heading-slug="${heading.id}"]`)
+        });
+      });
+      
+      // Set observer options
+      const observerOptions = {
+        rootMargin: '-100px 0px -80% 0px', // Adjust the viewport: reduce 100px from the top and 80% from the bottom
+        threshold: 0
+      };
+      
+      // Create the Intersection Observer
+      observer = new IntersectionObserver((entries) => {
+        // Find the currently visible heading
+        const visibleHeadings = entries
+          .filter(entry => entry.isIntersecting)
+          .map(entry => entry.target as HTMLHeadingElement);
+        
+        // Update the highlight when a heading is visible
+        if (visibleHeadings.length > 0) {
+          // Clear all highlights
+          tocLinks.forEach(link => {
+            link.classList.remove('text-orange-400', 'font-medium');
+          });
+          
+          // Get the first visible heading
+          const currentHeading = visibleHeadings[0];
+          const mapItem = headingMap.get(currentHeading.id);
+          const link = mapItem?.link;
+          
+          if (link) {
+            // Highlight the current heading
+            link.classList.add('text-orange-400', 'font-medium');
+            
+            // Scroll the TOC to keep the current item visible
+            const linkTop = link.offsetTop;
+            const containerTop = tocContainer.scrollTop;
+            const containerHeight = tocContainer.clientHeight;
+            
+            if (linkTop < containerTop || linkTop > containerTop + containerHeight - 50) {
+              tocContainer.scrollTo({
+                top: linkTop - containerHeight / 2,
+                behavior: 'smooth'
+              });
+            }
+          }
+        }
+      }, observerOptions);
+      
+      // Start observing all heading elements
+      headingElements.forEach(heading => observer?.observe(heading));
+      isObserving = true;
+      
+      // Handle TOC clicks with event delegation to reduce listeners
+      tocContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const link = target.closest('.toc-link') as HTMLAnchorElement | null;
+        
+        if (!link) return;
+        
+        e.preventDefault();
+        const slug = link.getAttribute('data-heading-slug');
+        if (!slug) return;
+        
+        const targetHeading = document.getElementById(slug);
+        if (targetHeading) {
+          const offset = 120;
+          const targetPosition = targetHeading.offsetTop - offset;
+          
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+          
+          // Update the URL
+          history.pushState({}, '', `#${slug}`);
+        }
+      });
+      
+      // Handle wheel events in the TOC area
+      handleTocWheel = (event) => {
+        const container = event.currentTarget as HTMLElement;
+        const delta = event.deltaY;
+        const goingUp = delta < 0;
+        const goingDown = delta > 0;
+        
+        // Check whether the container boundary has been reached
+        const atTop = container.scrollTop <= 0;
+        const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight;
+        
+        // Do not block events at the boundary
+        if ((goingUp && atTop) || (goingDown && atBottom)) {
+          return;
+        }
+        
+        // Otherwise block the event and scroll manually
+        event.preventDefault();
+        event.stopPropagation();
+        container.scrollTop += delta;
+      };
+      
+      tocContainer.addEventListener('wheel', handleTocWheel, { passive: false });
+    }
+    
+    // Use requestAnimationFrame for performance and to avoid running before the page is fully loaded
+    const setupObserverOnLoad = () => {
+      if (document.readyState === 'complete') {
+        setupHeadingObserver();
+      } else {
+        window.requestAnimationFrame(setupObserverOnLoad);
+      }
+    };
+    
+    window.requestAnimationFrame(setupObserverOnLoad);
+    
+    // Clean up resources when the page unloads
+    window.addEventListener('beforeunload', () => {
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      
+      const tocContainer = document.querySelector<HTMLDivElement>('.toc-container');
+      if (tocContainer) {
+        // Fix linter errors by removing event listeners correctly
+        tocContainer.removeEventListener('wheel', handleTocWheel);
+      }
+    });
+  })();
+</script>
+
+<style>
+  .toc-container {
+    position: sticky;
+    top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: rgb(249 250 251 / 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgb(229 231 235 / 0.5);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+
+  .toc-container::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .toc-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .toc-container::-webkit-scrollbar-thumb {
+    background-color: rgb(156 163 175 / 0.5);
+    border-radius: 2px;
+  }
+
+  .toc-container::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(156 163 175 / 0.7);
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-item {
+    margin: 0.5rem 0;
+  }
+
+  .toc-link {
+    display: block;
+    padding: 0.25rem 0.5rem;
+    color: rgb(75 85 99);
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+  }
+
+  .toc-link:hover {
+    background-color: rgb(243 244 246);
+    color: rgb(17 24 39);
+  }
+
+  .toc-link.active {
+    background-color: rgb(229 231 235);
+    color: rgb(17 24 39);
+    font-weight: 500;
+  }
+
+  .toc-item[data-depth="1"] .toc-link {
+    font-weight: 500;
+    color: rgb(17 24 39);
+  }
+
+  .toc-item[data-depth="2"] .toc-link {
+    padding-left: 1rem;
+  }
+
+  .toc-item[data-depth="3"] .toc-link {
+    padding-left: 1.5rem;
+  }
+
+  .toc-item[data-depth="4"] .toc-link {
+    padding-left: 2rem;
+  }
+
+  .toc-item[data-depth="5"] .toc-link {
+    padding-left: 2.5rem;
+  }
+
+  .toc-item[data-depth="6"] .toc-link {
+    padding-left: 3rem;
+  }
+
+  @media (max-width: 1024px) {
+    .toc-container {
+      position: relative;
+      top: 0;
+      max-height: none;
+      margin: 1rem 0;
+    }
+  }
+</style>
