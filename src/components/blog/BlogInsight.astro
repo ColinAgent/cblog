@@ -3,6 +3,7 @@ import Icon from '@components/icons/icon.astro'
 import type { CollectionEntry } from 'astro:content'
 import { Image } from 'astro:assets'
 import { getPostUrl } from '../../utils/getPostUrl'
+import { UI, getContentLocale } from '../../i18n'
 
 const { blog } = Astro.props
 
@@ -11,6 +12,8 @@ interface Props {
 }
 
 const postUrl = getPostUrl(blog)
+const locale = getContentLocale(blog)
+const t = UI[locale]
 ---
 
 <a
@@ -43,7 +46,7 @@ const postUrl = getPostUrl(blog)
         <p
             class="mt-5 inline-flex items-center gap-x-1 font-medium text-orange-400 decoration-2 group-hover:underline dark:text-orange-300"
         >
-            Read more <Icon name="arrowRightStatic" />
+            {t.common.readMore} <Icon name="arrowRightStatic" />
         </p>
     </div>
 </a>

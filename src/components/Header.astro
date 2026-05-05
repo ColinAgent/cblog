@@ -1,12 +1,30 @@
 ---
-import { NavigationLinks } from '../config'
 import NavLink from './ui/NavLink.astro'
 import BrandLogo from './logos/BrandLogo.astro'
-import Theme from './logos/Theme.astro';
+import Theme from './logos/Theme.astro'
+import {
+    DEFAULT_LOCALE,
+    LOCALE_LABELS,
+    getAlternateLocaleUrl,
+    getHomeUrl,
+    getLocaleFromPath,
+    getNavigationLinks,
+    type Locale,
+} from '../i18n'
+
+interface Props {
+    locale?: Locale
+}
+
+const locale = Astro.props.locale ?? getLocaleFromPath(Astro.url.pathname)
+const otherLocale: Locale = locale === 'zh' ? 'en' : DEFAULT_LOCALE
+const navigationLinks = getNavigationLinks(locale)
+const homeUrl = getHomeUrl(locale)
+const alternateLocaleUrl = getAlternateLocaleUrl(Astro.url.pathname, otherLocale)
 ---
 
 <!-- <header class="sticky inset-x-0 top-4 z-50 flex w-full flex-wrap text-sm md:flex-nowrap md:justify-start"> -->
-    <header class="sticky inset-x-0 top-0 z-50 flex w-full flex-wrap text-sm md:flex-nowrap md:justify-start">
+<header class="sticky inset-x-0 top-0 z-50 flex w-full flex-wrap text-sm md:flex-nowrap md:justify-start">
     <nav
         class="relative mx-2 w-full rounded-[36px] border border-neutral-100 bg-neutral-100 px-4 py-3 backdrop-blur-md dark:border-neutral-700/40 dark:bg-neutral-800/80 dark:backdrop-blur-md md:flex md:items-center md:justify-between md:px-6 lg:px-8 xl:mx-auto"
         aria-label="Global"
@@ -14,7 +32,7 @@ import Theme from './logos/Theme.astro';
         <div class="flex items-center justify-between ">
             <a
                 class="h-[42px] flex-none rounded-lg text-xl font-bold outline-none ring-zinc-500 focus-visible:ring dark:ring-zinc-200 dark:focus:outline-none"
-                href="/"
+                href={homeUrl}
                 aria-label="Brand"
             >
                 <BrandLogo class="h-full w-auto object-cover rounded-full" />
@@ -71,9 +89,15 @@ import Theme from './logos/Theme.astro';
             <div
                 class="mt-5 flex flex-col gap-x-0 gap-y-4 md:mt-0 md:flex-row md:items-center md:justify-end md:gap-x-4 lg:gap-x-7 md:gap-y-0 md:ps-7"
             >
-                {NavigationLinks.map(link => (
+                {navigationLinks.map(link => (
                     <NavLink url={link.url} name={link.name} />
                 ))}
+                <a
+                    href={alternateLocaleUrl}
+                    class="rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-neutral-600 transition hover:border-orange-300 hover:text-orange-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-orange-300 dark:hover:text-orange-300"
+                >
+                    {LOCALE_LABELS[otherLocale]}
+                </a>
                 <span class="hidden md:inline-block">
                     <Theme />
                 </span>

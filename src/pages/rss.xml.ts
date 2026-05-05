@@ -1,12 +1,11 @@
 import rss from '@astrojs/rss'
 import type { CollectionEntry } from 'astro:content'
 import { SITE } from '../config.ts'
-import { getPosts } from '../support/content'
+import { getPosts, sortPostsByDate } from '../support/content'
+import { getPostUrl } from '../utils/getPostUrl'
 
 export async function GET() {
-    const posts: CollectionEntry<'posts'>[] = (await getPosts()).sort(
-        (a: CollectionEntry<'posts'>, b: CollectionEntry<'posts'>) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-    )
+    const posts: CollectionEntry<'posts'>[] = sortPostsByDate(await getPosts())
 
     return rss({
         title: SITE.title,
@@ -14,7 +13,7 @@ export async function GET() {
         site: SITE.url,
         items: posts.map(post => ({
             ...post.data,
-            link: `/posts/${post.slug}/`,
+            link: getPostUrl(post),
         })),
     })
 }

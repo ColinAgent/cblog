@@ -10,10 +10,10 @@ export const SITE: Site = {
 }
 
 export const NavigationLinks: NavigationLink[] = [
-    { name: 'Posts', url: '/posts' },
-    { name: 'Timeline', url: '/timeline' },
-    { name: 'Categories', url: '/categories' },
-    { name: 'About', url: '/about' },
+    { name: 'Posts', url: '/zh/posts' },
+    { name: 'Timeline', url: '/zh/timeline' },
+    { name: 'Categories', url: '/zh/categories' },
+    { name: 'About', url: '/zh/about' },
     // { name: 'Friends', url: '/friends' },
 ]
 
@@ -45,10 +45,10 @@ export const FooterLinks = [
     {
         section: 'Blog',
         links: [
-            { name: 'Posts', url: '/posts' },
-            { name: 'Timeline', url: '/timeline' },
-            { name: 'Categories', url: '/categories' },
-            { name: 'About Me', url: '/about' },
+            { name: 'Posts', url: '/zh/posts' },
+            { name: 'Timeline', url: '/zh/timeline' },
+            { name: 'Categories', url: '/zh/categories' },
+            { name: 'About Me', url: '/zh/about' },
         ],
     },
     {
@@ -72,7 +72,7 @@ export const SEO = {
     structuredData: {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        'inLanguage': 'en-US',
+        'inLanguage': 'zh-CN',
         '@id': SITE.url,
         'url': SITE.url,
         'name': SITE.title,

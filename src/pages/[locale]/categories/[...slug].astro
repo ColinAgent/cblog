@@ -1,0 +1,64 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro'
+import type { CollectionEntry } from 'astro:content'
+import MainSection from '@components/blocks/MainSection.astro'
+import BlogCard from '@components/blog/BlogCard.astro'
+import { SITE } from '../../../config'
+import { getCategories, getPosts, sortPostsByDate } from '../../../support/content'
+import { UI, getCategoriesUrl, getContentLocale, getContentSlug, type Locale } from '../../../i18n'
+
+export async function getStaticPaths() {
+    const categories = await getCategories()
+    return categories.map(category => {
+        const locale = getContentLocale(category)
+        return {
+            params: { locale, slug: getContentSlug(category) },
+            props: { category, locale },
+        }
+    })
+}
+
+const { category, locale } = Astro.props as { category: CollectionEntry<'categories'>; locale: Locale }
+const t = UI[locale]
+const URL = Astro.url.href
+const categoriesURL = `${Astro.url.origin}${getCategoriesUrl(locale)}`
+const categorySlug = getContentSlug(category)
+
+const posts: CollectionEntry<'posts'>[] = sortPostsByDate(await getPosts(false, locale)).filter((b) => {
+    return b.data.category === categorySlug
+})
+---
+
+<BaseLayout
+    title={category.data.title}
+    description={category.data.description}
+    lang={locale}
+    structuredData={{
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        'inLanguage': locale === 'zh' ? 'zh-CN' : 'en-US',
+        '@id': URL,
+        'url': URL,
+        'name': `${category.data.title} - ${SITE.title}`,
+        'description': category.data.description,
+        'isPartOf': {
+            '@type': 'WebSite',
+            'url': categoriesURL,
+            'name': `${t.pages.categoriesTitle} - ${SITE.title}`,
+        },
+    }}
+>
+    <MainSection
+        title={category.data.title}
+        subTitle={category.data.description}
+        btnExists={true}
+        btnTitle={t.common.goToList}
+        btnURL={getCategoriesUrl(locale)}
+    />
+
+    <section class="mx-auto max-w-[85rem] px-4 py-8 sm:px-6 lg:px-8 mb-10 2xl:max-w-full">
+        <div class="grid gap-6 grid-cols-1 lg:grid-cols-3 sm:grid-cols-2">
+            {posts.map(b => <BlogCard blog={b} />)}
+        </div>
+    </section>
+</BaseLayout>

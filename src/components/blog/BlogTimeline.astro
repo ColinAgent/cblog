@@ -1,17 +1,19 @@
 ---
 import type { CollectionEntry } from 'astro:content'
 import { getPostUrl } from '../../utils/getPostUrl'
+import { getContentLocale } from '../../i18n'
 
 interface Props {
     blog: CollectionEntry<'posts'>
 }
 
 const { blog } = Astro.props;
+const dateLocale = getContentLocale(blog) === 'zh' ? 'zh-CN' : 'en-US'
 ---
 
 <div class="flex gap-x-4 py-4">
   <time class="text-sm text-neutral-600 dark:text-neutral-400" datetime={blog.data.pubDate.toString()}>
-    {new Date(blog.data.pubDate).toLocaleDateString('en-US')}
+    {new Date(blog.data.pubDate).toLocaleDateString(dateLocale)}
   </time>
   <a href={getPostUrl(blog)} class="flex-1 hover:text-teal-600 transition-colors">
     {blog.data.title}

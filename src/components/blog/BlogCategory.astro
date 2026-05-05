@@ -1,6 +1,5 @@
 ---
-
-const { slug, title, description, count, publishDate } = Astro.props
+const { slug, title, description, count, publishDate, url, countLabel = 'posts', updateLabel = 'update' } = Astro.props
 
 interface Props {
     slug: string
@@ -8,10 +7,13 @@ interface Props {
     description: string
     count: number
     publishDate: string
+    url?: string
+    countLabel?: string
+    updateLabel?: string
 }
 ---
 
-<a href=`/categories/${slug}` class="flex flex-col justify-between size-full bg-neutral-100 shadow-lg rounded-lg p-5 dark:bg-neutral-900/30 group">
+<a href={url ?? `/categories/${slug}`} class="flex flex-col justify-between size-full bg-neutral-100 shadow-lg rounded-lg p-5 dark:bg-neutral-900/30 group">
     <div class="flex justify-between items-center mb-3">
         <div class="flex justify-center gap-x-4 items-center">
             <div class="flex-shrink-0">
@@ -44,7 +46,7 @@ interface Props {
                 <path d="M8 18h1" />
                 <path d="M18.4 9.6a2 2 0 0 1 3 3L17 17l-4 1 1-4Z" />
             </svg>
-            {count} posts
+            {count} {countLabel}
         </span>
         <span class="text-xs inline-flex items-center rounded me-2 text-neutral-500 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-400">
             <svg
@@ -60,7 +62,7 @@ interface Props {
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
             </svg>
-            update {publishDate}
+            {updateLabel} {publishDate}
         </span>
     </div>
 </a>

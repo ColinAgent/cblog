@@ -1,0 +1,59 @@
+---
+import type { CollectionEntry } from 'astro:content'
+import BaseLayout from '@layouts/BaseLayout.astro'
+import BlogTimeline from '@components/blog/BlogTimeline.astro'
+import { SITE } from '../../config'
+import { getPosts, sortPostsByDate } from '../../support/content'
+import { LOCALES, UI, type Locale } from '../../i18n'
+
+export async function getStaticPaths() {
+    return LOCALES.map(locale => ({
+        params: { locale },
+        props: { locale },
+    }))
+}
+
+const { locale } = Astro.props as { locale: Locale }
+const t = UI[locale]
+const posts: CollectionEntry<'posts'>[] = sortPostsByDate(await getPosts(false, locale))
+const description = t.pages.timelineDescription(posts.length)
+const URL = Astro.url.href
+---
+
+<BaseLayout
+    title={t.pages.timelineTitle}
+    description={description}
+    lang={locale}
+    structuredData={{
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        'inLanguage': locale === 'zh' ? 'zh-CN' : 'en-US',
+        '@id': URL,
+        'url': URL,
+        'name': `${t.pages.timelineTitle} - ${SITE.title}`,
+        'description': description,
+        'isPartOf': {
+            '@type': 'WebSite',
+            'url': SITE.url,
+            'name': SITE.title,
+            'description': SITE.description,
+        },
+    }}
+>
+    <section class="mx-auto max-w-[85rem] mt-10 lg:mt-10 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+        <div class="max-w-3xl mx-auto mb-10 lg:mb-14">
+            <h2 class="text-3xl font-bold text-neutral-800 dark:text-neutral-200 md:text-4xl md:leading-tight">{t.pages.timelineTitle}</h2>
+            <p class="mt-4 text-lg group text-pretty text-neutral-600 dark:text-neutral-400">
+                {description}
+            </p>
+        </div>
+         <div class="max-w-3xl mx-auto mb-10 lg:mb-14 dark:text-neutral-200">
+            {posts.length > 0 ? posts.map(p => <BlogTimeline blog={p} />) : (
+                <div class="rounded-xl border border-dashed border-neutral-300 p-10 text-center text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+                    {t.common.noPosts}
+                </div>
+            )}
+        </div>
+        
+    </section>
+</BaseLayout>

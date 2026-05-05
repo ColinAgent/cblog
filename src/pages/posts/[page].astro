@@ -1,135 +1,24 @@
 ---
-// src/pages/posts/[page].astro
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { SITE } from '../../config';
-import { Image } from 'astro:assets';
-import { getPosts } from '../../support/content';
-import { getPostUrl } from '../../utils/getPostUrl';
+import Redirect from '@components/Redirect.astro'
+import { SITE } from '../../config'
+import { getPosts, sortPostsByDate } from '../../support/content'
+import { DEFAULT_LOCALE, getPostsPageUrl } from '../../i18n'
 
-// Path function for static generation
 export async function getStaticPaths() {
-  const allPosts = await getPosts();
-  const postsPerPage = SITE.pageSize || 9;
-  const totalPages = Math.max(1, Math.ceil(allPosts.length / postsPerPage));
-  
-  // Sort by date
-  const sortedPosts = allPosts.sort((a, b) => {
-    const dateA = a.data.pubDate.valueOf();
-    const dateB = b.data.pubDate.valueOf();
-    return dateB - dateA;
-  });
-  
-  // Generate a path for each page
-  return Array.from({ length: totalPages }, (_, i) => {
-    const page = i + 1;
-    const start = i * postsPerPage;
-    const end = start + postsPerPage;
-    const paginatedPosts = sortedPosts.slice(start, end);
-    
-    return {
-      params: { page: page.toString() },
-      props: { 
-        paginatedPosts,
-        currentPage: page,
-        totalPages,
-        totalPosts: allPosts.length
-      }
-    };
-  });
+    const postsPerPage = SITE.pageSize || 9
+    const totalPosts = sortPostsByDate(await getPosts(false, DEFAULT_LOCALE)).length
+    const totalPages = Math.max(1, Math.ceil(totalPosts / postsPerPage))
+
+    return Array.from({ length: totalPages }, (_, i) => {
+        const page = i + 1
+        return {
+            params: { page: page.toString() },
+            props: { to: getPostsPageUrl(DEFAULT_LOCALE, page) },
+        }
+    })
 }
 
-// Component props from getStaticPaths
-const { paginatedPosts, currentPage, totalPages, totalPosts } = Astro.props;
-
-const seo = {
-  title: `Posts (${currentPage}/${totalPages}) | ${SITE.title}`,
-  description: 'All the articles posted.',
-};
+const { to } = Astro.props
 ---
 
-<BaseLayout seo={seo}>
-  <!-- Title section -->
-  <div class="mx-auto max-w-2xl text-center px-4 py-10">
-    <h2 class="text-3xl font-bold text-neutral-800 dark:text-neutral-200 md:text-4xl md:leading-tight">
-      Posts
-    </h2>
-    <p class="mt-2 text-neutral-600 dark:text-neutral-400">{`All the articles I've posted. (${totalPosts})`}</p>
-  </div>
-
-  <!-- Post list -->
-  <section class="mx-auto grid max-w-[85rem] gap-6 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8 lg:py-14 2xl:max-w-full">
-    {paginatedPosts.length > 0 ? paginatedPosts.map((post) => (
-      <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-xl p-4 sm:p-5 h-full flex flex-col">
-        <a href={getPostUrl(post)} class="group h-full flex flex-col">
-          {post.data.cardImage && (
-            <div class="aspect-w-16 aspect-h-10 overflow-hidden rounded-xl mb-4">
-              <Image 
-                src={post.data.cardImage} 
-                alt={post.data.title || 'Blog post'} 
-                width={800}
-                height={450}
-                class="h-full sm:h-[220px] md:h-[240px] w-full object-cover rounded-xl transition duration-500 ease-in-out group-hover:scale-105"
-              />
-            </div>
-          )}
-          <div class="flex-1 flex flex-col">
-            <h3 class="text-xl font-bold text-gray-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{post.data.title || 'Untitled'}</h3>
-            <p class="mt-2 text-gray-600 dark:text-neutral-400">{post.data.description || ''}</p>
-            <div class="mt-auto">
-              <div class="mt-4 flex items-center gap-3">
-                {post.data.pubDate && (
-                  <span class="text-sm text-gray-500 dark:text-neutral-500">
-                    {new Date(post.data.pubDate).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                )}
-                {post.data.tags && (
-                  <span class="text-sm text-gray-500 dark:text-neutral-500">{post.data.tags.join(', ')}</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </a>
-      </div>
-    )) : (
-      <div class="col-span-full rounded-xl border border-dashed border-neutral-300 p-10 text-center text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-        No posts yet. You can add new Markdown or MDX posts in <code>src/content/posts</code>.
-      </div>
-    )}
-  </section>
-
-  <!-- Pagination -->
-  <div class="flex justify-center items-center space-x-2 pb-8">
-    {currentPage > 1 && (
-      <a 
-        href={`/posts/${currentPage - 1}`}
-        class="bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-300 dark:border-neutral-600 rounded-md px-3 py-1 hover:bg-gray-200 dark:hover:bg-neutral-600 transition"
-      >
-        Previous
-      </a>
-    )}
-    
-    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-      <a 
-        href={`/posts/${pageNum}`}
-        class={pageNum === currentPage 
-          ? "bg-orange-400 dark:bg-orange-500 text-white border border-orange-400 dark:border-orange-500 rounded-md px-3 py-1" 
-          : "bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-300 dark:border-neutral-600 rounded-md px-3 py-1 hover:bg-gray-200 dark:hover:bg-neutral-600 transition"}
-      >
-        {pageNum}
-      </a>
-    ))}
-    
-    {currentPage < totalPages && (
-      <a 
-        href={`/posts/${currentPage + 1}`}
-        class="bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-300 dark:border-neutral-600 rounded-md px-3 py-1 hover:bg-gray-200 dark:hover:bg-neutral-600 transition"
-      >
-        Next
-      </a>
-    )}
-  </div>
-</BaseLayout>
+<Redirect to={to} />

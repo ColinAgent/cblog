@@ -3,21 +3,26 @@ import type { CollectionEntry } from 'astro:content'
 import Icon from '../icons/icon.astro'
 import BlogCard from './BlogCard.astro'
 import { getPostUrl } from '../../utils/getPostUrl'
+import { UI, getContentLocale, getTimelineUrl, type Locale } from '../../i18n'
 
-const { posts } = Astro.props
+const { posts, locale: localeProp } = Astro.props
 
 interface Props {
     posts: CollectionEntry<'posts'>[]
+    locale?: Locale
 }
+
+const locale: Locale = localeProp ?? (posts[0] ? getContentLocale(posts[0]) : 'zh')
+const t = UI[locale]
 ---
 
 <section class="mx-auto max-w-[85rem] px-4 py-8 sm:px-6 lg:px-8 mb-10 2xl:max-w-full">
     <div class="text-left">
         <h2 class="mb-4 text-balance text-5xl font-extrabold tracking-tight text-neutral-800 dark:text-neutral-200">
-            Selected Article
+            {locale === 'zh' ? '精选文章' : 'Selected Article'}
         </h2>
         <p class="mb-8 max-w-prose text-pretty font-light text-neutral-600 dark:text-neutral-400 sm:text-xl">
-            Here are a few articles that I think are not bad, hope you like too.
+            {locale === 'zh' ? '这里是我觉得值得一读的文章。' : 'Here are a few articles that I think are not bad, hope you like too.'}
         </p>
     </div>
 
@@ -34,11 +39,11 @@ interface Props {
 
     <div class="text-center mt-6">
         <a
-            href="/timeline"
+            href={getTimelineUrl(locale)}
             class="group inline-flex items-center justify-center gap-x-2 rounded-full px-4 py-3 text-sm font-bold text-neutral-50 ring-zinc-500 transition duration-300 focus-visible:ring outline-none border border-transparent bg-orange-400 hover:bg-orange-500 active:bg-orange-500 dark:focus:outline-none disabled:pointer-events-none disabled:opacity-50 2xl:text-base dark:ring-zinc-200"
         >
             <div class="flex items-center gap-x-2">
-                <p>Want to read more?</p>Go here
+                <p>{locale === 'zh' ? '想读更多？' : 'Want to read more?'}</p>{t.common.goToList}
                 <Icon name="arrowRight" class="h-4 w-4 flex-shrink-0 transition duration-300 group-hover:translate-x-1" />
             </div>
         </a>

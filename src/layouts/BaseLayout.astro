@@ -4,6 +4,7 @@ import Footer from '@components/Footer.astro'
 import Header from '@components/Header.astro'
 import GoogleAnalytics from '@components/support/GoogleAnalytics.astro'
 import { SITE } from '../config'
+import { HTML_LANG, getLocaleFromPath, isLocale, type Locale } from '../i18n'
 
 interface Props {
     title?: string
@@ -18,14 +19,16 @@ interface Props {
     structuredData?: object
 }
 
-const { title, description, seo, ogImage, lang = 'en', structuredData } = Astro.props
+const { title, description, seo, ogImage, lang, structuredData } = Astro.props
+const locale: Locale = isLocale(lang) ? lang : getLocaleFromPath(Astro.url.pathname)
+const htmlLang = HTML_LANG[locale]
 const pageTitle = title ?? seo?.title ?? ''
 const pageDescription = description ?? seo?.description ?? SITE.description
 const pageOgImage = ogImage ?? seo?.ogImage
 const normalizeTitle = !pageTitle ? SITE.title : `${pageTitle} - ${SITE.title}`
 ---
 
-<html lang={lang} class="scrollbar-hide lenis lenis-smooth scroll-pt-16">
+<html lang={htmlLang} class="scrollbar-hide lenis lenis-smooth scroll-pt-16">
     <head>
         <title>{normalizeTitle}</title>
         <BaseHead
@@ -65,12 +68,12 @@ const normalizeTitle = !pageTitle ? SITE.title : `${pageTitle} - ${SITE.title}`
     </head>
     <body class="bg-neutral-200 selection:bg-yellow-400 selection:text-neutral-700 dark:bg-neutral-800">
         <div class="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-            <Header />
+            <Header locale={locale} />
             <main>
                 <slot />
             </main>
         </div>
-        <Footer />
+        <Footer locale={locale} />
         <style>
             .scrollbar-hide::-webkit-scrollbar {
                 display: none;

@@ -1,5 +1,12 @@
 ---
-import { FooterLinks } from '../config'
+import { getFooterLinks, getLocaleFromPath, type Locale } from '../i18n'
+
+interface Props {
+    locale?: Locale
+}
+
+const locale = Astro.props.locale ?? getLocaleFromPath(Astro.url.pathname)
+const footerLinks = getFooterLinks(locale)
 ---
 
 <footer class="w-full bg-neutral-300 dark:bg-neutral-900">
@@ -7,7 +14,7 @@ import { FooterLinks } from '../config'
         <div class="flex flex-col items-center gap-8">
             <nav aria-label="Footer navigation" class="flex w-full flex-col items-center gap-4">
                 {
-                    FooterLinks.map(section => (
+                    footerLinks.map(section => (
                         <div class="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
                             <h3 class="w-24 shrink-0 text-center text-base font-bold text-neutral-800 dark:text-neutral-200 sm:text-right">
                                 {section.section}

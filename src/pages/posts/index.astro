@@ -1,9 +1,5 @@
 ---
-// src/pages/posts/index.astro - Redirect to the first page
-export const prerender = true;
+import Redirect from '@components/Redirect.astro'
 ---
 
-<meta http-equiv="refresh" content="0;url=/posts/1" />
-<script>
-  window.location.href = "/posts/1";
-</script>
+<Redirect to="/zh/posts/1" />

@@ -1,0 +1,142 @@
+---
+// src/pages/[locale]/posts/[page].astro
+import type { CollectionEntry } from 'astro:content'
+import BaseLayout from '@layouts/BaseLayout.astro'
+import { SITE } from '../../../config'
+import { Image } from 'astro:assets'
+import { getPosts, sortPostsByDate } from '../../../support/content'
+import { LOCALES, UI, getPostsPageUrl, type Locale } from '../../../i18n'
+import { getPostUrl } from '../../../utils/getPostUrl'
+
+export async function getStaticPaths() {
+    const postsPerPage = SITE.pageSize || 9
+    const paths = []
+
+    for (const locale of LOCALES) {
+        const allPosts = sortPostsByDate(await getPosts(false, locale))
+        const totalPages = Math.max(1, Math.ceil(allPosts.length / postsPerPage))
+
+        for (let i = 0; i < totalPages; i += 1) {
+            const page = i + 1
+            const start = i * postsPerPage
+            const end = start + postsPerPage
+            const paginatedPosts = allPosts.slice(start, end)
+
+            paths.push({
+                params: { locale, page: page.toString() },
+                props: {
+                    locale,
+                    paginatedPosts,
+                    currentPage: page,
+                    totalPages,
+                    totalPosts: allPosts.length,
+                },
+            })
+        }
+    }
+
+    return paths
+}
+
+const { locale, paginatedPosts, currentPage, totalPages, totalPosts } = Astro.props as {
+    locale: Locale
+    paginatedPosts: CollectionEntry<'posts'>[]
+    currentPage: number
+    totalPages: number
+    totalPosts: number
+}
+
+const t = UI[locale]
+const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US'
+const seo = {
+    title: `${t.pages.postsTitle} (${currentPage}/${totalPages}) | ${SITE.title}`,
+    description: t.pages.postsDescription(totalPosts),
+}
+---
+
+<BaseLayout seo={seo} lang={locale}>
+  <!-- Title section -->
+  <div class="mx-auto max-w-2xl text-center px-4 py-10">
+    <h2 class="text-3xl font-bold text-neutral-800 dark:text-neutral-200 md:text-4xl md:leading-tight">
+      {t.pages.postsTitle}
+    </h2>
+    <p class="mt-2 text-neutral-600 dark:text-neutral-400">{t.pages.postsDescription(totalPosts)}</p>
+  </div>
+
+  <!-- Post list -->
+  <section class="mx-auto grid max-w-[85rem] gap-6 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8 lg:py-14 2xl:max-w-full">
+    {paginatedPosts.length > 0 ? paginatedPosts.map((post) => (
+      <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-xl p-4 sm:p-5 h-full flex flex-col">
+        <a href={getPostUrl(post)} class="group h-full flex flex-col">
+          {post.data.cardImage && (
+            <div class="aspect-w-16 aspect-h-10 overflow-hidden rounded-xl mb-4">
+              <Image 
+                src={post.data.cardImage} 
+                alt={post.data.title || 'Blog post'} 
+                width={800}
+                height={450}
+                class="h-full sm:h-[220px] md:h-[240px] w-full object-cover rounded-xl transition duration-500 ease-in-out group-hover:scale-105"
+              />
+            </div>
+          )}
+          <div class="flex-1 flex flex-col">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{post.data.title || 'Untitled'}</h3>
+            <p class="mt-2 text-gray-600 dark:text-neutral-400">{post.data.description || ''}</p>
+            <div class="mt-auto">
+              <div class="mt-4 flex items-center gap-3">
+                {post.data.pubDate && (
+                  <span class="text-sm text-gray-500 dark:text-neutral-500">
+                    {new Date(post.data.pubDate).toLocaleDateString(dateLocale, {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                )}
+                {post.data.tags && (
+                  <span class="text-sm text-gray-500 dark:text-neutral-500">{post.data.tags.join(', ')}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    )) : (
+      <div class="col-span-full rounded-xl border border-dashed border-neutral-300 p-10 text-center text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+        {t.common.noPosts}
+      </div>
+    )}
+  </section>
+
+  <!-- Pagination -->
+  <div class="flex justify-center items-center space-x-2 pb-8">
+    {currentPage > 1 && (
+      <a 
+        href={getPostsPageUrl(locale, currentPage - 1)}
+        class="bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-300 dark:border-neutral-600 rounded-md px-3 py-1 hover:bg-gray-200 dark:hover:bg-neutral-600 transition"
+      >
+        {t.common.previous}
+      </a>
+    )}
+    
+    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+      <a 
+        href={getPostsPageUrl(locale, pageNum)}
+        class={pageNum === currentPage 
+          ? "bg-orange-400 dark:bg-orange-500 text-white border border-orange-400 dark:border-orange-500 rounded-md px-3 py-1" 
+          : "bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-300 dark:border-neutral-600 rounded-md px-3 py-1 hover:bg-gray-200 dark:hover:bg-neutral-600 transition"}
+      >
+        {pageNum}
+      </a>
+    ))}
+    
+    {currentPage < totalPages && (
+      <a 
+        href={getPostsPageUrl(locale, currentPage + 1)}
+        class="bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-300 dark:border-neutral-600 rounded-md px-3 py-1 hover:bg-gray-200 dark:hover:bg-neutral-600 transition"
+      >
+        {t.common.next}
+      </a>
+    )}
+  </div>
+</BaseLayout>
